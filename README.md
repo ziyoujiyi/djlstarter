@@ -1,0 +1,3 @@
+# djlstarter
+
+./gradlew infer
