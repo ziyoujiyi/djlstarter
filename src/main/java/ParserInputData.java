@@ -32,7 +32,8 @@ public class ParserInputData {
     public ParserInputData() {}
 
     public static final int BATCH_SIZE = 2;
-    public static final int BUFFER_MAX = 1000;
+    public static final int BUFFER_MAX = 20480;
+    public static int BATCH_NUM;
     public static final int SLOT_NUM = 408;
     public static String trainingFile = "/home/soft/xiaoxiao-PaddleRec/djlstarter/src/main/java/for_wangbin/out_test.1";
     public static BatchSample[] batchSample2 = new BatchSample[BUFFER_MAX]; // 全局样本
@@ -105,6 +106,7 @@ public class ParserInputData {
                     batchIdx++;
                 }
             }
+            BATCH_NUM = batchIdx;
             inputStream.close();
             bufferedReader.close();
 

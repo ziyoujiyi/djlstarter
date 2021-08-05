@@ -17,13 +17,25 @@ import ai.djl.translate.TranslateException;
 
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.lang.*;
+import java.util.*;
 
 public class Main {
-
+	/*
+	static ThreadLocal<String> localParam = new ThreadLocal<>();
+	*/
 	public static void main(String[] args) throws IOException, MalformedModelException, TranslateException, ModelNotFoundException {
-
-		System.out.println("hello paddle");
-
+		/*
+		ArrayBlockingQueue<Integer> abq = new ArrayBlockingQueue<Integer>(100);
+		new Thread(()->{
+			localParam.set("hello java");
+			System.out.println(Thread.currentThread().getName() + ":" + localParam.get());
+		}, "T1").start();
+		new Thread(()->{
+			localParam.set("hello paddle");
+			System.out.println(Thread.currentThread().getName() + ":" + localParam.get());
+		}, "T2").start();
+		*/
 		ParserInputData.ReadInputData();
 		//ParserInputData.TestParseInputData();
 
@@ -32,44 +44,15 @@ public class Main {
 			.optEngine("PaddlePaddle")
 			.optModelPath(Paths.get("/home/soft/xiaoxiao-PaddleRec/djlstarter/src/main/java/for_wangbin/rec_inference.zip"))
 			.optModelName("rec_inference")
+			.optOption("removePass", "repeated_fc_relu_fuse_pass")
 			.optDevice(Device.cpu())
 			.optProgress(new ProgressBar())
 			.build();
 
 		ZooModel<NDList, NDList> model = criteria.loadModel();
 		Predictor<NDList, NDList> predictor = model.newPredictor();
-		/*
-		for (int i = 0; i < ParserInputData.batchSample2.length; i++) {
-			BatchSample batchSample = ParserInputData.batchSample2[i];
-			NDManager manager = NDManager.newBaseManager();
-			long[] inputFeasignIds = new long [batchSample.length()];
-			System.out.println(batchSample.length());
-			long[][] lod = new long[ParserInputData.SLOT_NUM][ParserInputData.BATCH_SIZE + 1];
-			int k = 0;
-			int slotIdx = 0;
-			for (Integer slotId : batchSample.features2.keySet()) {
-				lod[slotIdx][0] = 0;
-				for (int sampleIdx = 0; sampleIdx < batchSample.features2.get(slotId).size(); sampleIdx++) {
-					lod[slotIdx][sampleIdx + 1] = lod[slotIdx][sampleIdx] + batchSample.featureCnts2.get(slotId).get(sampleIdx);
-					for (int m = 0; m < batchSample.features2.get(slotId).get(sampleIdx).size(); m++) {
-						inputFeasignIds[k] = batchSample.features2.get(slotId).get(sampleIdx).get(m);
-						k++;
-					}
-				}
-				slotIdx++;
-			}
-			System.out.println(k);
-			NDArray inputData = manager.create(inputFeasignIds, new Shape(1, inputFeasignIds.length));
-			((PpNDArray)inputData).setLoD(lod);
-			NDArray inputType = manager.zeros(new Shape(1, inputFeasignIds.length), DataType.INT64);
 
-			NDList list = new NDList(inputData, inputType);
-			NDList batchResult = predictor.predict(list);
-			System.out.println(batchResult);
-		}
-		*/
-		// ref. BertClassification.java
-		for (int i = 0; i < ParserInputData.batchSample2.length; i++) {
+		for (int i = 0; i < ParserInputData.BATCH_NUM; i++) {
 			BatchSample batchSample = ParserInputData.batchSample2[i];
 			NDManager manager = NDManager.newBaseManager();
 			NDList list = new NDList();
@@ -88,16 +71,24 @@ public class Main {
 				((PpNDArray)inputData).setLoD(lod);
 				list.add(inputData);
 			}
-			System.out.println(list);
+			listIn.add(list);
 			NDList batchResult = predictor.predict(list);
-			System.out.println(batchResult);
+			listOut.add(batchResult);
 		}
+
+		//TestMain();
 	}
+
+	public static ArrayList<NDList> listIn = new ArrayList<NDList>();
+	public static ArrayList<NDList> listOut = new ArrayList<NDList>();
 
 	public static void TestMain() {
-
-
+		System.out.println("total batch num: " + ParserInputData.BATCH_NUM);
+		System.out.println("samples num per batch: " + ParserInputData.BATCH_SIZE);
+		System.out.println("slots num per sample: " + ParserInputData.SLOT_NUM);
+		for (int i = 0; i < ParserInputData.BATCH_NUM; i++) {
+			System.out.println("NDList In for batch " + i + ": " + listIn.get(0));
+			System.out.println("NDList Out for batch " + i + ": " + listOut.get(0));
+		}
 	}
-
-	public NDList[] result = new NDList[ParserInputData.batchSample2.length];
 }
