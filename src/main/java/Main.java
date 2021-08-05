@@ -15,6 +15,13 @@ import ai.djl.repository.zoo.ZooModel;
 import ai.djl.training.util.ProgressBar;
 import ai.djl.translate.TranslateException;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.lang.*;
@@ -22,13 +29,16 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Main {
+	private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
 	public static void main(String[] args) throws IOException, MalformedModelException, TranslateException, ModelNotFoundException {
-
 		ParserInputData.ReadInputData();
 		//ParserInputData.TestParseInputData();
-
+		
 		Criteria<NDList, NDList> criteria = Criteria.builder()
 			.setTypes(NDList.class, NDList.class)
 			.optEngine("PaddlePaddle")
@@ -40,54 +50,81 @@ public class Main {
 			.build();
 
 		ZooModel<NDList, NDList> model = criteria.loadModel();
-		Predictor<NDList, NDList> predictor = model.newPredictor();
+
 		for (int i = 0; i < ParserInputData.BATCH_NUM; i++) {
-			BatchSample batchSample = ParserInputData.batchSample2[i];
-			NDManager manager = NDManager.newBaseManager();
-			NDList list = new NDList();
-			for (Integer slotId : batchSample.features2.keySet()) {
-				long[] inputFeasignIds = new long [batchSample.length(slotId)];
-				int k = 0;
-				long[][] lod = new long[1][ParserInputData.BATCH_SIZE + 1];
-				lod[0][0] = 0;
-				for (int sampleIdx = 0; sampleIdx < batchSample.features2.get(slotId).size(); sampleIdx++) {
-					lod[0][sampleIdx + 1] = lod[0][sampleIdx] + batchSample.featureCnts2.get(slotId).get(sampleIdx);
-					for (int m = 0; m < batchSample.features2.get(slotId).get(sampleIdx).size(); m++) {
-						inputFeasignIds[k] = batchSample.features2.get(slotId).get(sampleIdx).get(m);
-					}
-				}
-				NDArray inputData = manager.create(inputFeasignIds, new Shape(inputFeasignIds.length, 1));
-				((PpNDArray)inputData).setLoD(lod);
-				list.add(inputData);
-			}
-			listIn.add(list);
-			//NDList batchResult = predictor.predict(list);
-			//listOut.add(batchResult);
+			listIn.add(GetNDListIn(i));
 		}
 		//TestMain();
-		ExecutorService es = Executors.newFixedThreadPool(2);
-		es.execute(new InferRunnable(model, listIn.get(0)));
-		es.execute(new InferRunnable(model, listIn.get(1)));
+		int numOfThreads = 2;
+		List<InferCallable> callables = new ArrayList<>(numOfThreads);
+		for (int i = 0; i < numOfThreads; i++) {
+			callables.add(new InferCallable(model, i));
+		}
+		int successThreads = 0;
+		try {
+			List<Future<NDList>> futures = new ArrayList<Future<NDList>>();
+			ExecutorService es = Executors.newFixedThreadPool(numOfThreads);
+			for (InferCallable callable : callables) {
+				futures.add(es.submit(callable));
+			}
+			for (Future<NDList> future : futures) {
+				if (future.get() != null) {
+					++successThreads;
+					System.out.println(future.get().get(0));
+				}
+			}
+		} catch (InterruptedException | ExecutionException e) {
+			logger.error("", e);
+		}
+		for (InferCallable callable : callables) {
+			callable.close();
+		}
 	}
 
-	public static class InferRunnable implements Runnable {
+	public static NDList GetNDListIn(int batchIdx) {
+		BatchSample batchSample = ParserInputData.batchSample2[batchIdx];
+		NDManager manager = NDManager.newBaseManager();
+		NDList list = new NDList();
+		for (Integer slotId : batchSample.features2.keySet()) {
+			long[] inputFeasignIds = new long [batchSample.length(slotId)];
+			int k = 0;
+			long[][] lod = new long[1][ParserInputData.BATCH_SIZE + 1];
+			lod[0][0] = 0;
+			for (int sampleIdx = 0; sampleIdx < batchSample.features2.get(slotId).size(); sampleIdx++) {
+				lod[0][sampleIdx + 1] = lod[0][sampleIdx] + batchSample.featureCnts2.get(slotId).get(sampleIdx);
+				for (int m = 0; m < batchSample.features2.get(slotId).get(sampleIdx).size(); m++) {
+					inputFeasignIds[k] = batchSample.features2.get(slotId).get(sampleIdx).get(m);
+				}
+			}
+			NDArray inputData = manager.create(inputFeasignIds, new Shape(inputFeasignIds.length, 1));
+			((PpNDArray)inputData).setLoD(lod);
+			list.add(inputData);
+		}
+		return list;
+	}
+
+	public static class InferCallable implements Callable<NDList> {
 		private Predictor<NDList, NDList> predictor;
-		private NDList batchList;
-		public InferRunnable(ZooModel<NDList, NDList> model, NDList batchList) {
+		private NDList batchListIn = new NDList();
+		public InferCallable(ZooModel<NDList, NDList> model, int batchIdx) {
 			this.predictor = model.newPredictor();
-			this.batchList = batchList;
+			batchListIn = GetNDListIn(batchIdx);
 		}
 		
-		public void run() {
+		public NDList call() {
+			NDList batchResult = null;
 			String threadName = Thread.currentThread().getName();
 			System.out.println(threadName);
 			try {
-				System.out.println(batchList);
-				//NDList batchResult = predictor.predict(batchList);
-				//System.out.println(batchResult.get(0));
+				batchResult = predictor.predict(batchListIn);
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
+			return batchResult;
+		}
+
+		public void close() {
+			predictor.close();
 		}
 	}
 
