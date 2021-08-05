@@ -19,23 +19,13 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.lang.*;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Main {
-	/*
-	static ThreadLocal<String> localParam = new ThreadLocal<>();
-	*/
+
 	public static void main(String[] args) throws IOException, MalformedModelException, TranslateException, ModelNotFoundException {
-		/*
-		ArrayBlockingQueue<Integer> abq = new ArrayBlockingQueue<Integer>(100);
-		new Thread(()->{
-			localParam.set("hello java");
-			System.out.println(Thread.currentThread().getName() + ":" + localParam.get());
-		}, "T1").start();
-		new Thread(()->{
-			localParam.set("hello paddle");
-			System.out.println(Thread.currentThread().getName() + ":" + localParam.get());
-		}, "T2").start();
-		*/
+
 		ParserInputData.ReadInputData();
 		//ParserInputData.TestParseInputData();
 
@@ -51,7 +41,6 @@ public class Main {
 
 		ZooModel<NDList, NDList> model = criteria.loadModel();
 		Predictor<NDList, NDList> predictor = model.newPredictor();
-
 		for (int i = 0; i < ParserInputData.BATCH_NUM; i++) {
 			BatchSample batchSample = ParserInputData.batchSample2[i];
 			NDManager manager = NDManager.newBaseManager();
@@ -72,11 +61,34 @@ public class Main {
 				list.add(inputData);
 			}
 			listIn.add(list);
-			NDList batchResult = predictor.predict(list);
-			listOut.add(batchResult);
+			//NDList batchResult = predictor.predict(list);
+			//listOut.add(batchResult);
 		}
-
 		//TestMain();
+		ExecutorService es = Executors.newFixedThreadPool(2);
+		es.execute(new InferRunnable(model, listIn.get(0)));
+		es.execute(new InferRunnable(model, listIn.get(1)));
+	}
+
+	public static class InferRunnable implements Runnable {
+		private Predictor<NDList, NDList> predictor;
+		private NDList batchList;
+		public InferRunnable(ZooModel<NDList, NDList> model, NDList batchList) {
+			this.predictor = model.newPredictor();
+			this.batchList = batchList;
+		}
+		
+		public void run() {
+			String threadName = Thread.currentThread().getName();
+			System.out.println(threadName);
+			try {
+				System.out.println(batchList);
+				//NDList batchResult = predictor.predict(batchList);
+				//System.out.println(batchResult.get(0));
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	public static ArrayList<NDList> listIn = new ArrayList<NDList>();
