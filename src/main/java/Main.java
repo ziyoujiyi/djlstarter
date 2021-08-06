@@ -95,7 +95,7 @@ public class Main {
 					++successThreads;
 				}
 			}
-			System.out.println(successThreads);
+			System.out.println("successfull threads: " + successThreads);
 			long timeInferEnd = System.currentTimeMillis();
 
 			Metric metric = GetMetricInfo(timeInferEnd - timeInferStart, Config.threadNum * Config.iteration * Config.batchSize, futures.get(0).get());
