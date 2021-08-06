@@ -1,3 +1,9 @@
+/**
+ * descript: Main
+ * author: wangbin44@baidu.com
+ * date: 2021.8.6
+ */
+
 import ai.djl.Device;
 import ai.djl.MalformedModelException;
 import ai.djl.inference.Predictor;
@@ -25,6 +31,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.lang.*;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.ManagementFactory;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -32,10 +40,22 @@ import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.commons.cli.*;
+
 public class Main {
 	private static final Logger logger = LoggerFactory.getLogger(Main.class);
+	private static MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
 
 	public static void main(String[] args) throws IOException, MalformedModelException, TranslateException, ModelNotFoundException {
+		String arch = System.getProperty("os.arch");
+		if (!"x86_64".equals(arch) && !"amd64".equals(arch)) {
+            logger.warn("{} is not supported.", arch);
+            return;
+        }
+		Config config = new Config();
+		config.ReadConfig(args);
+
+		ParserInputData.BATCH_SIZE = config.batchSize;
 		ParserInputData.ReadInputData();
 		//ParserInputData.TestParseInputData();
 		
@@ -55,31 +75,95 @@ public class Main {
 			listIn.add(GetNDListIn(i));
 		}
 		//TestMain();
-		int numOfThreads = 2;
-		List<InferCallable> callables = new ArrayList<>(numOfThreads);
-		for (int i = 0; i < numOfThreads; i++) {
-			callables.add(new InferCallable(model, i));
+		List<InferCallable> callables = new ArrayList<>(Config.threadNum);
+		for (int i = 0; i < Config.threadNum; i++) {
+			//int batchIdx = ParserInputData.queue.take();
+			int batchIdx = 0;
+			callables.add(new InferCallable(model, batchIdx));
 		}
 		int successThreads = 0;
 		try {
 			List<Future<NDList>> futures = new ArrayList<Future<NDList>>();
-			ExecutorService es = Executors.newFixedThreadPool(numOfThreads);
+			ExecutorService es = Executors.newFixedThreadPool(Config.threadNum);
+			long timeInferStart = System.currentTimeMillis();
 			for (InferCallable callable : callables) {
 				futures.add(es.submit(callable));
 			}
+			/*在调用submit提交任务之后，主线程本来是继续运行了。但是运行到future.get()的时候就阻塞住了，一直等到任务执行完毕，拿到了返回的返回值，主线程才会继续运行。*/
 			for (Future<NDList> future : futures) {
 				if (future.get() != null) {
 					++successThreads;
-					System.out.println(future.get().get(0));
 				}
 			}
+			System.out.println(successThreads);
+			long timeInferEnd = System.currentTimeMillis();
+
+			Metric metric = GetMetricInfo(timeInferEnd - timeInferStart, Config.threadNum * Config.iteration * Config.batchSize, futures.get(0).get());
+			metric.WritePerformance(Config.outPerformanceFile);
+
+			for (InferCallable callable : callables) {
+				callable.close();
+			}
+			es.shutdown();
 		} catch (InterruptedException | ExecutionException e) {
 			logger.error("", e);
 		}
-		for (InferCallable callable : callables) {
-			callable.close();
+	}
+
+	public static class InferCallable implements Callable<NDList> {
+		private Predictor<NDList, NDList> predictor;
+		private int batchIdx;
+		private NDList batchResult = null;
+		private Metric metric = new Metric();
+		public InferCallable(ZooModel<NDList, NDList> model, int batchIdx) {
+			this.predictor = model.newPredictor();
+			this.batchIdx = batchIdx;
+		}
+		
+		public NDList call() {
+			long timeStart;
+			long timeRun;
+			try {
+				long t1 = System.currentTimeMillis();
+				for (int i = 0; i < Config.iteration; ++i) { // 每次迭代输入都是相同的，预测结果取一个就行
+					NDList batchListIn = GetNDListIn(batchIdx);
+					//timeStart = System.currentTimeMillis();
+					batchResult = predictor.predict(batchListIn);
+					//timeRun = System.currentTimeMillis() - timeStart;
+					
+					//long idleRun = (long)((1 - Config.cpuUsageRatio) / Config.cpuUsageRatio) * timeRun;
+					//while(System.currentTimeMillis() - timeStart < idleRun) {}
+				}
+				long t2 = System.currentTimeMillis();
+				//Metric metric = GetMetricInfo(metric, t2 - t1, batchResult);
+				//metric.WritePerformance(Config.outPerformanceFile);
+
+				return batchResult;
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+			return batchResult;
+		}
+
+		public void close() {
+			predictor.close();
 		}
 	}
+
+	public static Metric GetMetricInfo(long t, long sampleCnts, NDList batchResult) {
+		Metric metric = new Metric();
+		metric.threadName = Thread.currentThread().getName();
+		metric.cpuUsageRatio = Config.cpuUsageRatio;
+		metric.samplecnt = sampleCnts;
+		metric.latency = 1.0 * t / metric.samplecnt;
+		metric.qps = 1000.0 * metric.samplecnt / t;
+		metric.memUsageInfo = memoryMXBean.getHeapMemoryUsage().toString();
+		metric.batchResult = batchResult;
+		return metric;
+	}
+
+	public static ArrayList<NDList> listIn = new ArrayList<NDList>();
+	public static ArrayList<NDList> listOut = new ArrayList<NDList>();
 
 	public static NDList GetNDListIn(int batchIdx) {
 		BatchSample batchSample = ParserInputData.batchSample2[batchIdx];
@@ -102,34 +186,6 @@ public class Main {
 		}
 		return list;
 	}
-
-	public static class InferCallable implements Callable<NDList> {
-		private Predictor<NDList, NDList> predictor;
-		private NDList batchListIn = new NDList();
-		public InferCallable(ZooModel<NDList, NDList> model, int batchIdx) {
-			this.predictor = model.newPredictor();
-			batchListIn = GetNDListIn(batchIdx);
-		}
-		
-		public NDList call() {
-			NDList batchResult = null;
-			String threadName = Thread.currentThread().getName();
-			System.out.println(threadName);
-			try {
-				batchResult = predictor.predict(batchListIn);
-			} catch(Exception e) {
-				e.printStackTrace();
-			}
-			return batchResult;
-		}
-
-		public void close() {
-			predictor.close();
-		}
-	}
-
-	public static ArrayList<NDList> listIn = new ArrayList<NDList>();
-	public static ArrayList<NDList> listOut = new ArrayList<NDList>();
 
 	public static void TestMain() {
 		System.out.println("total batch num: " + ParserInputData.BATCH_NUM);
