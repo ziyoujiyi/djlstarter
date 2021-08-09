@@ -27,10 +27,11 @@ public class ParserInputData {
 
 	public static BlockingQueue<Integer> queue;
     public static int BATCH_SIZE = 2;
-    public static final int BUFFER_MAX = 20480;
+    public static final int BUFFER_MAX = 2048;
     public static int BATCH_NUM;
     public static final int SLOT_NUM = 408;
-    public static String trainingFile = "/workspace/djl_test/wangbin44/djlstarter/src/main/java/for_wangbin/out_test.1";
+    //public static String trainingFile = "/workspace/djl_test/wangbin44/djlstarter/src/main/java/for_wangbin/out_test.1";
+    public static String trainingFile = "/home/soft/xiaoxiao-PaddleRec/djlstarter/src/main/java/for_wangbin/out_test.1";
     public static BatchSample[] batchSample2 = new BatchSample[BUFFER_MAX];
     public static TreeMap<String, Integer> feasignMap = new TreeMap<String, Integer>();
 

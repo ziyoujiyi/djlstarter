@@ -48,7 +48,7 @@ public class Metric {
     public float cpuUsageRatio;
     public String memUsageInfo;
     public String threadName;
-    public NDList batchResult;
+    public float[] batchResult = null;
     public String outPerformanceFile;
 
     public long samplecnt;
@@ -83,7 +83,7 @@ public class Metric {
 			out.write("samples num per batch: " + ParserInputData.BATCH_SIZE + "\n");
 			out.write("slots num per sample: " + ParserInputData.SLOT_NUM +  "\n");
 
-            System.out.println("fesign to feature id: ");
+            out.write("fesign to feature id: ");
 			for (String s : ParserInputData.feasignMap.keySet()) {
 				out.write(s + ": " + ParserInputData.feasignMap.get(s) + "\n");
 			}

@@ -20,6 +20,9 @@ import ai.djl.repository.zoo.ModelZoo;
 import ai.djl.repository.zoo.ZooModel;
 import ai.djl.training.util.ProgressBar;
 import ai.djl.translate.TranslateException;
+import ai.djl.translate.Batchifier;
+import ai.djl.translate.Translator;
+import ai.djl.translate.TranslatorContext;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -27,9 +30,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.lucene.util.RamUsageEstimator;
 
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.nio.FloatBuffer;
 import java.lang.*;
 import java.util.*;
 import java.lang.management.MemoryMXBean;
@@ -61,22 +66,26 @@ public class Main {
 		Metric.WriteLog();
 		//ParserInputData.TestParseInputData();
 		
-		Criteria<NDList, NDList> criteria = Criteria.builder()
-			.setTypes(NDList.class, NDList.class)
+		RecTranslator translator = new RecTranslator(0);
+		Criteria<Void, float[]> criteria = Criteria.builder()
+			.setTypes(Void.class, float[].class)
 			.optEngine("PaddlePaddle")
-			.optModelPath(Paths.get("/workspace/djl_test/wangbin44/djlstarter/src/main/java/for_wangbin/rec_inference.zip"))
-			//.optModelPath(Paths.get("/home/soft/xiaoxiao-PaddleRec/djlstarter/src/main/java/for_wangbin/rec_inference.zip"))
+			//.optModelPath(Paths.get("/workspace/djl_test/wangbin44/djlstarter/src/main/java/for_wangbin/rec_inference.zip"))
+			.optModelPath(Paths.get("/home/soft/xiaoxiao-PaddleRec/djlstarter/src/main/java/for_wangbin/rec_inference.zip"))
 			.optModelName("rec_inference")
 			.optOption("removePass", "repeated_fc_relu_fuse_pass")
 			.optDevice(Device.cpu())
+			.optTranslator(translator)
 			.optProgress(new ProgressBar())
 			.build();
 
-		ZooModel<NDList, NDList> model = criteria.loadModel();
+		ZooModel<Void, float[]> model = criteria.loadModel();
 
+		/*
 		for (int i = 0; i < ParserInputData.BATCH_NUM; i++) {
 			listIn.add(GetNDListIn(i));
 		}
+		*/
 		//TestMain();
 		List<InferCallable> callables = new ArrayList<>(Config.threadNum);
 		for (int i = 0; i < Config.threadNum; i++) {
@@ -86,13 +95,17 @@ public class Main {
 		}
 		int successThreads = 0;
 		try {
-			List<Future<NDList>> futures = new ArrayList<Future<NDList>>();
+			List<Future<float[]>> futures = new ArrayList<Future<float[]>>();
 			ExecutorService es = Executors.newFixedThreadPool(Config.threadNum);
+			for (InferCallable callable: callables) {
+				callable.warmup();
+			}
 			long timeInferStart = System.currentTimeMillis();
 			for (InferCallable callable : callables) {
 				futures.add(es.submit(callable));
+				//Thread.sleep(1000);
 			}
-			for (Future<NDList> future : futures) {
+			for (Future<float[]> future : futures) {
 				if (future.get() != null) {
 					++successThreads;
 				}
@@ -112,31 +125,32 @@ public class Main {
 		}
 	}
 
-	public static class InferCallable implements Callable<NDList> {
-		private Predictor<NDList, NDList> predictor;
+	public static class InferCallable implements Callable<float[]> {
+		private Predictor<Void, float[]> predictor;
 		private int batchIdx;
-		private NDList batchResult = null;
+		private float[] batchResult = null;
 		private Metric metric = new Metric();
-		public InferCallable(ZooModel<NDList, NDList> model, int batchIdx) {
+		public InferCallable(ZooModel<Void, float[]> model, int batchIdx) {
 			this.predictor = model.newPredictor();
 			this.batchIdx = batchIdx;
 		}
 		
-		public NDList call() {
+		public float[] call() {
+			
 			long timeStart;
 			long timeRun;
 			try {
-				long t1 = System.currentTimeMillis();
+				//long t1 = System.currentTimeMillis();
 				for (int i = 0; i < Config.iteration; ++i) {
-					NDList batchListIn = GetNDListIn(batchIdx);
+					System.out.println("iteration idx: " + i);
 					//timeStart = System.currentTimeMillis();
-					batchResult = predictor.predict(batchListIn);
+					batchResult = predictor.predict(null);
 					//timeRun = System.currentTimeMillis() - timeStart;
 					
 					//long idleRun = (long)((1 - Config.cpuUsageRatio) / Config.cpuUsageRatio) * timeRun;
 					//while(System.currentTimeMillis() - timeStart < idleRun) {}
 				}
-				long t2 = System.currentTimeMillis();
+				//long t2 = System.currentTimeMillis();
 				//Metric metric = GetMetricInfo(metric, t2 - t1, batchResult);
 				//metric.WritePerformance(Config.outPerformanceFile);
 
@@ -144,15 +158,20 @@ public class Main {
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
+			
 			return batchResult;
 		}
+
+		public void warmup() throws TranslateException {
+            predictor.predict(null);
+        }
 
 		public void close() {
 			predictor.close();
 		}
 	}
 
-	public static Metric GetMetricInfo(long t, long sampleCnts, NDList batchResult) {
+	public static Metric GetMetricInfo(long t, long sampleCnts, float[] batchResult) {
 		Metric metric = new Metric();
 		metric.threadName = Thread.currentThread().getName();
 		metric.cpuUsageRatio = Config.cpuUsageRatio;
@@ -187,6 +206,62 @@ public class Main {
 			list.add(inputData);
 		}
 		return list;
+	}
+
+	private static final class RecTranslator implements Translator<Void, float[]> {
+		private int batchIdx;
+
+		public RecTranslator(int batchIdx) {
+			this.batchIdx = batchIdx;
+		}
+
+		public NDList processInput(TranslatorContext ctx, Void input) {
+			BatchSample batchSample = ParserInputData.batchSample2[batchIdx];
+			NDManager manager = ctx.getNDManager();
+			NDList list = new NDList();
+			System.out.println("+++++++++++++++++");
+			for (Integer slotId : batchSample.features2.keySet()) {
+				long[] inputFeasignIds = new long [batchSample.length(slotId)];
+				int k = 0;
+				long[][] lod = new long[1][ParserInputData.BATCH_SIZE + 1];
+				lod[0][0] = 0;
+				for (int sampleIdx = 0; sampleIdx < batchSample.features2.get(slotId).size(); sampleIdx++) {
+					lod[0][sampleIdx + 1] = lod[0][sampleIdx] + batchSample.featureCnts2.get(slotId).get(sampleIdx);
+					for (int m = 0; m < batchSample.features2.get(slotId).get(sampleIdx).size(); m++) {
+						inputFeasignIds[k] = batchSample.features2.get(slotId).get(sampleIdx).get(m);
+						k++;
+					}
+				}
+				System.out.println("slot id: " + slotId + " len: " + batchSample.length(slotId) + " k: " + k);
+				//for (int t = 0; t < k; t++) {
+				//	System.out.print(inputFeasignIds[t] + ",");
+				//}
+				//System.out.println();
+				NDArray inputData = manager.create(inputFeasignIds, new Shape(inputFeasignIds.length, 1));
+				//long[] in = inputData.toLongArray();
+				//System.out.println("lod: ");
+				//for (int t = 0; t < lod[0].length; t++) {
+				//	System.out.print(lod[0][t] + ",");
+				//}
+				System.out.println("inputdata size: " + RamUsageEstimator.shallowSizeOf(inputData) + " " + RamUsageEstimator.sizeOf(inputData));
+				((PpNDArray)inputData).setLoD(lod);
+				list.add(inputData);
+			}
+			//System.out.println("batchSample size: " + RamUsageEstimator.shallowSizeOf(batchSample) + " " + RamUsageEstimator.sizeOf(batchSample));
+			//System.out.println("list size: " + RamUsageEstimator.shallowSizeOf(list) + " " + RamUsageEstimator.sizeOf(list));
+			return list;
+		}
+
+		public float[] processOutput(TranslatorContext ctx, NDList list) {
+			FloatBuffer fb = list.get(0).toByteBuffer().asFloatBuffer();
+            float[] ret = new float[fb.remaining()];
+            fb.get(ret);
+            return ret;
+		}
+
+		public Batchifier getBatchifier() {
+			return null;
+		}
 	}
 
 	public static void TestMain() {
