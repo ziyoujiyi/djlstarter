@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.lang.*;
+import java.util.*;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.ManagementFactory;
 import java.util.*;
@@ -57,12 +58,14 @@ public class Main {
 
 		ParserInputData.BATCH_SIZE = config.batchSize;
 		ParserInputData.ReadInputData();
+		Metric.WriteLog();
 		//ParserInputData.TestParseInputData();
 		
 		Criteria<NDList, NDList> criteria = Criteria.builder()
 			.setTypes(NDList.class, NDList.class)
 			.optEngine("PaddlePaddle")
 			.optModelPath(Paths.get("/workspace/djl_test/wangbin44/djlstarter/src/main/java/for_wangbin/rec_inference.zip"))
+			//.optModelPath(Paths.get("/home/soft/xiaoxiao-PaddleRec/djlstarter/src/main/java/for_wangbin/rec_inference.zip"))
 			.optModelName("rec_inference")
 			.optOption("removePass", "repeated_fc_relu_fuse_pass")
 			.optDevice(Device.cpu())

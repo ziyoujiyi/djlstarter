@@ -32,7 +32,7 @@ public class ParserInputData {
     public static final int SLOT_NUM = 408;
     public static String trainingFile = "/workspace/djl_test/wangbin44/djlstarter/src/main/java/for_wangbin/out_test.1";
     public static BatchSample[] batchSample2 = new BatchSample[BUFFER_MAX];
-    public TreeMap<String, Integer> feasignMap = new TreeMap<String, Integer>();
+    public static TreeMap<String, Integer> feasignMap = new TreeMap<String, Integer>();
 
     public static void ReadInputData() {
         Integer[] slotIds = new Integer[SLOT_NUM];
@@ -127,8 +127,8 @@ public class ParserInputData {
     }
 
     public static void TestPrintFeasignMap() {
-    	for (Integer String s : feasignMap.keySet()) {
-	    System.out.println(s + ": " + feasignMap.get(s));
+    	for (String s : feasignMap.keySet()) {
+	        System.out.println(s + ": " + feasignMap.get(s));
+        }
 	}
-    }
 }

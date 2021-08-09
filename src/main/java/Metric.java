@@ -75,4 +75,35 @@ public class Metric {
         System.out.println(String.format("%s: outPerformanceFile created sucess!", threadName));
         System.out.println("\n\n");
     } 
+
+    public static void WriteLog() {
+		try {
+            BufferedWriter out = new BufferedWriter(new FileWriter("log.txt", true));
+			out.write("total batch num: " + ParserInputData.BATCH_NUM + "\n");
+			out.write("samples num per batch: " + ParserInputData.BATCH_SIZE + "\n");
+			out.write("slots num per sample: " + ParserInputData.SLOT_NUM +  "\n");
+
+            System.out.println("fesign to feature id: ");
+			for (String s : ParserInputData.feasignMap.keySet()) {
+				out.write(s + ": " + ParserInputData.feasignMap.get(s) + "\n");
+			}
+
+			BatchSample batchSample = ParserInputData.batchSample2[0];
+			out.write("data in batch 0" + "\n");
+			for (Integer slotId : batchSample.features2.keySet()) {
+				out.write("slot id: " + slotId + "\n");
+				for (int i = 0; i < batchSample.features2.get(slotId).size(); i++) {
+					for (int j = 0; j < batchSample.features2.get(slotId).get(i).size(); j++) {
+						out.write(batchSample.features2.get(slotId).get(i).get(j) + " ");
+					}
+					out.write("\n");
+				}
+			}
+            out.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        System.out.println("logFile created sucess!");
+        System.out.println("\n\n");
+    } 
 }
