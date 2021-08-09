@@ -43,7 +43,6 @@ import org.slf4j.LoggerFactory;
 import org.apache.commons.cli.*;
 
 public class Metric {
-    /* 线程内指标 */
     public double qps;
     public double latency;
     public float cpuUsageRatio;
@@ -67,8 +66,8 @@ public class Metric {
             out.write("latency: " + latency + "\n");
             out.write("cpu usage ratio: " + cpuUsageRatio + "\n");
             out.write("memory usage info:\n" + memUsageInfo + "\n");
-            out.write("batch result: \n");
-            out.write(batchResult.get(0) + "\n");
+            //out.write("batch result: \n");
+            //out.write(batchResult.get(0) + "\n");
             out.close();
         } catch (Exception e) {
             e.printStackTrace();

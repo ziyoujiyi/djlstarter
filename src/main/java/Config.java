@@ -52,7 +52,6 @@ public class Config {
 
     public static void ReadConfig(String[] args) {
         System.out.println(Arrays.asList(args));
-		// 根据命令行参数定义Option对象，第1/2/3/4个参数分别是指命令行参数名缩写、参数名全称、是否有参数值、参数描述
 		Option opt1 = new Option("t", "threadNum", true, "threrad num");
 		opt1.setRequired(true);
 		Option opt2 = new Option("bsz", "batchSize", true, "batch size");
@@ -82,7 +81,7 @@ public class Config {
 		}
 
 		if (cli.hasOption("t")) {
-			threadNum = Integer.parseInt(cli.getOptionValue("t", "1")); // 1 是默认值
+			threadNum = Integer.parseInt(cli.getOptionValue("t", "1"));
 			System.out.println(String.format(">>>>>> thread num: %s", threadNum));
 		}
 		if (cli.hasOption("bsz")) {

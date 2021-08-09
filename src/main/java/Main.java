@@ -62,7 +62,7 @@ public class Main {
 		Criteria<NDList, NDList> criteria = Criteria.builder()
 			.setTypes(NDList.class, NDList.class)
 			.optEngine("PaddlePaddle")
-			.optModelPath(Paths.get("/home/soft/xiaoxiao-PaddleRec/djlstarter/src/main/java/for_wangbin/rec_inference.zip"))
+			.optModelPath(Paths.get("/workspace/djl_test/wangbin44/djlstarter/src/main/java/for_wangbin/rec_inference.zip"))
 			.optModelName("rec_inference")
 			.optOption("removePass", "repeated_fc_relu_fuse_pass")
 			.optDevice(Device.cpu())
@@ -89,7 +89,6 @@ public class Main {
 			for (InferCallable callable : callables) {
 				futures.add(es.submit(callable));
 			}
-			/*在调用submit提交任务之后，主线程本来是继续运行了。但是运行到future.get()的时候就阻塞住了，一直等到任务执行完毕，拿到了返回的返回值，主线程才会继续运行。*/
 			for (Future<NDList> future : futures) {
 				if (future.get() != null) {
 					++successThreads;
@@ -125,7 +124,7 @@ public class Main {
 			long timeRun;
 			try {
 				long t1 = System.currentTimeMillis();
-				for (int i = 0; i < Config.iteration; ++i) { // 每次迭代输入都是相同的，预测结果取一个就行
+				for (int i = 0; i < Config.iteration; ++i) {
 					NDList batchListIn = GetNDListIn(batchIdx);
 					//timeStart = System.currentTimeMillis();
 					batchResult = predictor.predict(batchListIn);

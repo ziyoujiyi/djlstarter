@@ -30,8 +30,9 @@ public class ParserInputData {
     public static final int BUFFER_MAX = 20480;
     public static int BATCH_NUM;
     public static final int SLOT_NUM = 408;
-    public static String trainingFile = "/home/soft/xiaoxiao-PaddleRec/djlstarter/src/main/java/for_wangbin/out_test.1";
-    public static BatchSample[] batchSample2 = new BatchSample[BUFFER_MAX]; // 全局样本
+    public static String trainingFile = "/workspace/djl_test/wangbin44/djlstarter/src/main/java/for_wangbin/out_test.1";
+    public static BatchSample[] batchSample2 = new BatchSample[BUFFER_MAX];
+    public TreeMap<String, Integer> feasignMap = new TreeMap<String, Integer>();
 
     public static void ReadInputData() {
         Integer[] slotIds = new Integer[SLOT_NUM];
@@ -43,7 +44,6 @@ public class ParserInputData {
         for (int i = 0; i < BUFFER_MAX; i++) {
             batchSample2[i] = new BatchSample();
         }
-        TreeMap<String, Integer> feasignMap = new TreeMap<String, Integer>();
         try {
             FileInputStream inputStream = new FileInputStream(trainingFile);
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
@@ -74,7 +74,6 @@ public class ParserInputData {
                         oneSample.get(slotId).add(feasign);
                     }
                 }
-                // 单个样本的 slot padding 处理
                 for (Integer slotId : slotIds) {
                     if (oneSample.containsKey(slotId)) {
                         continue;
@@ -125,5 +124,11 @@ public class ParserInputData {
                 System.out.print("\n");
             }
         }
+    }
+
+    public static void TestPrintFeasignMap() {
+    	for (Integer String s : feasignMap.keySet()) {
+	    System.out.println(s + ": " + feasignMap.get(s));
+	}
     }
 }
