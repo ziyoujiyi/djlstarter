@@ -64,8 +64,7 @@ public class Main {
 		Criteria<NDList, NDList> criteria = Criteria.builder()
 			.setTypes(NDList.class, NDList.class)
 			.optEngine("PaddlePaddle")
-			.optModelPath(Paths.get("/workspace/djl_test/wangbin44/djlstarter/src/main/java/for_wangbin/rec_inference.zip"))
-			//.optModelPath(Paths.get("/home/soft/xiaoxiao-PaddleRec/djlstarter/src/main/java/for_wangbin/rec_inference.zip"))
+			.optModelPath(Paths.get(Config.modelFile))
 			.optModelName("rec_inference")
 			.optOption("removePass", "repeated_fc_relu_fuse_pass")
 			.optDevice(Device.cpu())
@@ -78,14 +77,13 @@ public class Main {
 			listIn.add(GetNDListIn(i));
 		}
 		//TestMain();
-		List<InferCallable> callables = new ArrayList<>(Config.threadNum);
-		for (int i = 0; i < Config.threadNum; i++) {
-			//int batchIdx = ParserInputData.queue.take();
-			int batchIdx = 0;
-			callables.add(new InferCallable(model, batchIdx));
-		}
-		int successThreads = 0;
 		try {
+			List<InferCallable> callables = new ArrayList<>(Config.threadNum);
+			for (int i = 0; i < Config.threadNum; i++) {
+				int threadId = i;
+				callables.add(new InferCallable(model, threadId));
+			}
+			int successThreads = 0;
 			List<Future<NDList>> futures = new ArrayList<Future<NDList>>();
 			ExecutorService es = Executors.newFixedThreadPool(Config.threadNum);
 			long timeInferStart = System.currentTimeMillis();
@@ -100,7 +98,7 @@ public class Main {
 			System.out.println("successfull threads: " + successThreads);
 			long timeInferEnd = System.currentTimeMillis();
 
-			Metric metric = GetMetricInfo(timeInferEnd - timeInferStart, Config.threadNum * Config.iteration * Config.batchSize, futures.get(0).get());
+			Metric metric = GetMetricInfo(timeInferEnd - timeInferStart, Config.iteration * Config.batchSize, futures.get(0).get());
 			metric.WritePerformance(Config.outPerformanceFile);
 
 			for (InferCallable callable : callables) {
@@ -114,32 +112,32 @@ public class Main {
 
 	public static class InferCallable implements Callable<NDList> {
 		private Predictor<NDList, NDList> predictor;
-		private int batchIdx;
+		private int threadId;
 		private NDList batchResult = null;
 		private Metric metric = new Metric();
-		public InferCallable(ZooModel<NDList, NDList> model, int batchIdx) {
+		public InferCallable(ZooModel<NDList, NDList> model, int threadId) {
 			this.predictor = model.newPredictor();
-			this.batchIdx = batchIdx;
+			this.threadId = threadId;
 		}
 		
 		public NDList call() {
 			long timeStart;
 			long timeRun;
 			try {
-				long t1 = System.currentTimeMillis();
+				//long t1 = System.currentTimeMillis();
 				for (int i = 0; i < Config.iteration; ++i) {
+					int batchIdx = ParserInputData.queue.take();
+					System.out.println("iterationIdx: " + i + " thread: " + threadId + " batch idx: " + batchIdx);
 					NDList batchListIn = GetNDListIn(batchIdx);
 					//timeStart = System.currentTimeMillis();
 					batchResult = predictor.predict(batchListIn);
+					ParserInputData.queue.put(batchIdx);
 					//timeRun = System.currentTimeMillis() - timeStart;
 					
 					//long idleRun = (long)((1 - Config.cpuUsageRatio) / Config.cpuUsageRatio) * timeRun;
 					//while(System.currentTimeMillis() - timeStart < idleRun) {}
 				}
-				long t2 = System.currentTimeMillis();
-				//Metric metric = GetMetricInfo(metric, t2 - t1, batchResult);
-				//metric.WritePerformance(Config.outPerformanceFile);
-
+				//long t2 = System.currentTimeMillis();
 				return batchResult;
 			} catch(Exception e) {
 				e.printStackTrace();

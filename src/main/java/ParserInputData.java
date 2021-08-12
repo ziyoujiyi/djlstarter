@@ -14,7 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * function: feedFineRank
@@ -25,12 +25,11 @@ public class ParserInputData {
 
     public ParserInputData() {}
 
-	public static BlockingQueue<Integer> queue;
+	public static LinkedBlockingQueue<Integer> queue = new LinkedBlockingQueue<Integer>();
     public static int BATCH_SIZE = 2;
     public static final int BUFFER_MAX = 20480;
     public static int BATCH_NUM;
     public static final int SLOT_NUM = 408;
-    public static String trainingFile = "/workspace/djl_test/wangbin44/djlstarter/src/main/java/for_wangbin/out_test.1";
     public static BatchSample[] batchSample2 = new BatchSample[BUFFER_MAX];
     public static TreeMap<String, Integer> feasignMap = new TreeMap<String, Integer>();
 
@@ -45,7 +44,7 @@ public class ParserInputData {
             batchSample2[i] = new BatchSample();
         }
         try {
-            FileInputStream inputStream = new FileInputStream(trainingFile);
+            FileInputStream inputStream = new FileInputStream(Config.inputdata);
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
             int batchIdx = 0;
             int lineCnt = 0;
@@ -97,7 +96,8 @@ public class ParserInputData {
                 }
                 if (lineCnt == BATCH_SIZE) {
                     lineCnt = 0;
-                    //queue.put(batchIdx);
+                    queue.put(batchIdx);
+                    System.out.println("generate batchIdx: " + batchIdx);
                     batchIdx++;
                 }
             }

@@ -47,6 +47,8 @@ public class Config {
     public static float cpuUsageRatio;
     public static int iteration;
     public static String outPerformanceFile;
+	public static String inputdata;
+	public static String modelFile;
 
     public Config() {};
 
@@ -62,6 +64,10 @@ public class Config {
         opt4.setRequired(true);
         Option opt5 = new Option("op", "outPerformanceFile", true, "perfomance file");
         opt5.setRequired(true);
+		Option opt6 = new Option("inputdata", "inputdata", true, "training file");
+        opt6.setRequired(true);
+		Option opt7 = new Option("modelFile", "modelFile", true, "model file");
+        opt7.setRequired(true);
 
 		Options options = new Options();
 		options.addOption(opt1);
@@ -69,6 +75,8 @@ public class Config {
 		options.addOption(opt3);
         options.addOption(opt4);
         options.addOption(opt5);
+		options.addOption(opt6);
+		options.addOption(opt7);
         
 		CommandLine cli = null;
 		CommandLineParser cliParser = new DefaultParser();
@@ -100,5 +108,13 @@ public class Config {
             outPerformanceFile = cli.getOptionValue("op", "performance.txt"); 
 			System.out.println(String.format(">>>>>> out performance file: %s", outPerformanceFile));
         }
+		if (cli.hasOption("inputdata")) {
+			inputdata = cli.getOptionValue("inputdata", "");
+			System.out.println(String.format(">>>>>> inputdata: %s", inputdata));
+		}
+		if (cli.hasOption("modelFile")) {
+			modelFile = cli.getOptionValue("modelFile", "");
+			System.out.println(String.format(">>>>>> modelFile: %s", modelFile));
+		}
     }
 }

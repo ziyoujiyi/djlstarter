@@ -1,3 +1,3 @@
 # djlstarter
 
-./gradlew infer
+sh run.sh
