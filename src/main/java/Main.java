@@ -47,6 +47,8 @@ public class Main {
 	private static final Logger logger = LoggerFactory.getLogger(Main.class);
 	private static MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
 
+	//public static long t;
+	
 	public static void main(String[] args) throws IOException, MalformedModelException, TranslateException, ModelNotFoundException {
 		String arch = System.getProperty("os.arch");
 		if (!"x86_64".equals(arch) && !"amd64".equals(arch)) {
@@ -59,8 +61,11 @@ public class Main {
 		ParserInputData.BATCH_SIZE = config.batchSize;
 		ParserInputData.ReadInputData();
 		Metric.WriteLog();
+		for (int i = 0; i < ParserInputData.BATCH_NUM; i++) {
+			listIn.add(GetNDListIn(i));
+		}
 		//ParserInputData.TestParseInputData();
-		
+		long timeInferStart = System.currentTimeMillis();
 		Criteria<NDList, NDList> criteria = Criteria.builder()
 			.setTypes(NDList.class, NDList.class)
 			.optEngine("PaddlePaddle")
@@ -73,20 +78,15 @@ public class Main {
 
 		ZooModel<NDList, NDList> model = criteria.loadModel();
 
-		for (int i = 0; i < ParserInputData.BATCH_NUM; i++) {
-			listIn.add(GetNDListIn(i));
-		}
 		//TestMain();
 		try {
 			List<InferCallable> callables = new ArrayList<>(Config.threadNum);
 			for (int i = 0; i < Config.threadNum; i++) {
-				int threadId = i;
-				callables.add(new InferCallable(model, threadId));
+				callables.add(new InferCallable(model, i));
 			}
 			int successThreads = 0;
 			List<Future<NDList>> futures = new ArrayList<Future<NDList>>();
 			ExecutorService es = Executors.newFixedThreadPool(Config.threadNum);
-			long timeInferStart = System.currentTimeMillis();
 			for (InferCallable callable : callables) {
 				futures.add(es.submit(callable));
 			}
@@ -96,9 +96,10 @@ public class Main {
 				}
 			}
 			System.out.println("successfull threads: " + successThreads);
+			//System.out.print("read data time cost: " + t);
 			long timeInferEnd = System.currentTimeMillis();
-
-			Metric metric = GetMetricInfo(timeInferEnd - timeInferStart, Config.iteration * Config.batchSize, futures.get(0).get());
+			System.out.print("total time cost: " + (timeInferEnd - timeInferStart));
+			Metric metric = GetMetricInfo(timeInferEnd - timeInferStart, ParserInputData.BATCH_NUM * Config.batchSize, futures.get(0).get());
 			metric.WritePerformance(Config.outPerformanceFile);
 
 			for (InferCallable callable : callables) {
@@ -124,20 +125,16 @@ public class Main {
 			long timeStart;
 			long timeRun;
 			try {
-				//long t1 = System.currentTimeMillis();
-				for (int i = 0; i < Config.iteration; ++i) {
+				while (ParserInputData.queue.size() > 0) {
 					int batchIdx = ParserInputData.queue.take();
-					System.out.println("iterationIdx: " + i + " thread: " + threadId + " batch idx: " + batchIdx);
+					//long t1 = System.currentTimeMillis();
 					NDList batchListIn = GetNDListIn(batchIdx);
-					//timeStart = System.currentTimeMillis();
 					batchResult = predictor.predict(batchListIn);
-					ParserInputData.queue.put(batchIdx);
-					//timeRun = System.currentTimeMillis() - timeStart;
-					
+					//long t2 = System.currentTimeMillis();
+					//t += (t2 - t1);
 					//long idleRun = (long)((1 - Config.cpuUsageRatio) / Config.cpuUsageRatio) * timeRun;
 					//while(System.currentTimeMillis() - timeStart < idleRun) {}
 				}
-				//long t2 = System.currentTimeMillis();
 				return batchResult;
 			} catch(Exception e) {
 				e.printStackTrace();
@@ -157,7 +154,7 @@ public class Main {
 		metric.samplecnt = sampleCnts;
 		metric.latency = 1.0 * t / metric.samplecnt;
 		metric.qps = 1000.0 * metric.samplecnt / t;
-		metric.memUsageInfo = memoryMXBean.getHeapMemoryUsage().toString();
+		//metric.memUsageInfo = memoryMXBean.getHeapMemoryUsage().toString();
 		metric.batchResult = batchResult;
 		return metric;
 	}
@@ -166,18 +163,18 @@ public class Main {
 	public static ArrayList<NDList> listOut = new ArrayList<NDList>();
 
 	public static NDList GetNDListIn(int batchIdx) {
-		BatchSample batchSample = ParserInputData.batchSample2[batchIdx];
+		BatchSample batchSample = ParserInputData.batchSamples[batchIdx];
 		NDManager manager = NDManager.newBaseManager();
 		NDList list = new NDList();
-		for (Integer slotId : batchSample.features2.keySet()) {
+		for (Integer slotId : batchSample.features.keySet()) {
 			long[] inputFeasignIds = new long [batchSample.length(slotId)];
 			int k = 0;
 			long[][] lod = new long[1][ParserInputData.BATCH_SIZE + 1];
 			lod[0][0] = 0;
-			for (int sampleIdx = 0; sampleIdx < batchSample.features2.get(slotId).size(); sampleIdx++) {
-				lod[0][sampleIdx + 1] = lod[0][sampleIdx] + batchSample.featureCnts2.get(slotId).get(sampleIdx);
-				for (int m = 0; m < batchSample.features2.get(slotId).get(sampleIdx).size(); m++) {
-					inputFeasignIds[k] = batchSample.features2.get(slotId).get(sampleIdx).get(m);
+			for (int sampleIdx = 0; sampleIdx < batchSample.features.get(slotId).size(); sampleIdx++) {
+				lod[0][sampleIdx + 1] = lod[0][sampleIdx] + batchSample.featureCnts.get(slotId).get(sampleIdx);
+				for (int m = 0; m < batchSample.features.get(slotId).get(sampleIdx).size(); m++) {
+					inputFeasignIds[k] = batchSample.features.get(slotId).get(sampleIdx).get(m);
 				}
 			}
 			NDArray inputData = manager.create(inputFeasignIds, new Shape(inputFeasignIds.length, 1));

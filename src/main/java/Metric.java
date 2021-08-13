@@ -60,7 +60,7 @@ public class Metric {
             this.outPerformanceFile = outPerformanceFile;
             BufferedWriter out = new BufferedWriter(new FileWriter(outPerformanceFile, true));
             out.write("thread name: " + threadName + "\n");
-            out.write("iteration: " + Config.iteration + "  total threadNum: " + Config.threadNum + "  batchSize: " + 
+            out.write("sampleCnts: " + samplecnt + "  total threadNum: " + Config.threadNum + "  batchSize: " + 
                 Config.batchSize + "\n");
             out.write("qps: " + qps + "\n");
             out.write("latency: " + latency + "\n");
@@ -88,13 +88,13 @@ public class Metric {
 				out.write(s + ": " + ParserInputData.feasignMap.get(s) + "\n");
 			}
 
-			BatchSample batchSample = ParserInputData.batchSample2[0];
+			BatchSample batchSample = ParserInputData.batchSamples[0];
 			out.write("data in batch 0" + "\n");
-			for (Integer slotId : batchSample.features2.keySet()) {
+			for (Integer slotId : batchSample.features.keySet()) {
 				out.write("slot id: " + slotId + "\n");
-				for (int i = 0; i < batchSample.features2.get(slotId).size(); i++) {
-					for (int j = 0; j < batchSample.features2.get(slotId).get(i).size(); j++) {
-						out.write(batchSample.features2.get(slotId).get(i).get(j) + " ");
+				for (int i = 0; i < batchSample.features.get(slotId).size(); i++) {
+					for (int j = 0; j < batchSample.features.get(slotId).get(i).size(); j++) {
+						out.write(batchSample.features.get(slotId).get(i).get(j) + " ");
 					}
 					out.write("\n");
 				}

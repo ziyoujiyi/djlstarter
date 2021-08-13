@@ -30,7 +30,7 @@ public class ParserInputData {
     public static final int BUFFER_MAX = 20480;
     public static int BATCH_NUM;
     public static final int SLOT_NUM = 408;
-    public static BatchSample[] batchSample2 = new BatchSample[BUFFER_MAX];
+    public static BatchSample[] batchSamples = new BatchSample[BUFFER_MAX];
     public static TreeMap<String, Integer> feasignMap = new TreeMap<String, Integer>();
 
     public static void ReadInputData() {
@@ -41,7 +41,7 @@ public class ParserInputData {
             slotIds[i - 2] = i;
         }
         for (int i = 0; i < BUFFER_MAX; i++) {
-            batchSample2[i] = new BatchSample();
+            batchSamples[i] = new BatchSample();
         }
         try {
             FileInputStream inputStream = new FileInputStream(Config.inputdata);
@@ -82,16 +82,16 @@ public class ParserInputData {
                     oneSample.put(slotId, arr);
                 }
                 for (Integer slotId : slotIds) {
-                    if (!batchSample2[batchIdx].features2.containsKey(slotId)) {
+                    if (!batchSamples[batchIdx].features.containsKey(slotId)) {
                         ArrayList<ArrayList<Integer>> arr = new ArrayList<ArrayList<Integer>>();
                         ArrayList<Integer> cnt2 = new ArrayList<Integer>();
                         arr.add(oneSample.get(slotId));
-                        batchSample2[batchIdx].features2.put(slotId, arr);
+                        batchSamples[batchIdx].features.put(slotId, arr);
                         cnt2.add(oneSample.get(slotId).size());
-                        batchSample2[batchIdx].featureCnts2.put(slotId, cnt2);
+                        batchSamples[batchIdx].featureCnts.put(slotId, cnt2);
                     } else {
-                        batchSample2[batchIdx].features2.get(slotId).add(oneSample.get(slotId));
-                        batchSample2[batchIdx].featureCnts2.get(slotId).add(oneSample.get(slotId).size());
+                        batchSamples[batchIdx].features.get(slotId).add(oneSample.get(slotId));
+                        batchSamples[batchIdx].featureCnts.get(slotId).add(oneSample.get(slotId).size());
                     }
                 }
                 if (lineCnt == BATCH_SIZE) {
@@ -112,14 +112,14 @@ public class ParserInputData {
     }
 
     public static void TestParseInputData() {
-        System.out.println("total batch num: " + batchSample2.length);
-        BatchSample batchSample = batchSample2[0];
+        System.out.println("total batch num: " + batchSamples.length);
+        BatchSample batchSample = batchSamples[0];
         System.out.println("data in batch 0");
-        for (Integer slotId : batchSample.features2.keySet()) {
+        for (Integer slotId : batchSample.features.keySet()) {
             System.out.println("slot id: " + slotId);
-            for (int i = 0; i < batchSample.features2.get(slotId).size(); i++) {
-                for (int j = 0; j < batchSample.features2.get(slotId).get(i).size(); j++) {
-                    System.out.print(batchSample.features2.get(slotId).get(i).get(j) + " ");
+            for (int i = 0; i < batchSample.features.get(slotId).size(); i++) {
+                for (int j = 0; j < batchSample.features.get(slotId).get(i).size(); j++) {
+                    System.out.print(batchSample.features.get(slotId).get(i).get(j) + " ");
                 }
                 System.out.print("\n");
             }
