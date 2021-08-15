@@ -60,8 +60,6 @@ public class Config {
 		opt2.setRequired(true);
 		Option opt3 = new Option("cr", "cpuRatio", true, "cpu usage ratio");
 		opt3.setRequired(true);
-        Option opt4 = new Option("it", "iteration", true, "iteration num");
-        opt4.setRequired(true);
         Option opt5 = new Option("op", "outPerformanceFile", true, "perfomance file");
         opt5.setRequired(true);
 		Option opt6 = new Option("inputdata", "inputdata", true, "training file");
@@ -73,7 +71,6 @@ public class Config {
 		options.addOption(opt1);
 		options.addOption(opt2);
 		options.addOption(opt3);
-        options.addOption(opt4);
         options.addOption(opt5);
 		options.addOption(opt6);
 		options.addOption(opt7);
@@ -99,10 +96,6 @@ public class Config {
         if (cli.hasOption("cr")) {
             cpuUsageRatio = Float.parseFloat(cli.getOptionValue("cr", "1.0"));
             System.out.println(String.format(">>>>>> cpu usage ratio: %s", cpuUsageRatio));
-        }
-        if (cli.hasOption("it")) {
-            iteration = Integer.parseInt(cli.getOptionValue("it", "1")); 
-			System.out.println(String.format(">>>>>> iteration num: %s", iteration));
         }
         if (cli.hasOption("op")) {
             outPerformanceFile = cli.getOptionValue("op", "performance.txt"); 

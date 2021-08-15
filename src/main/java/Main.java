@@ -60,7 +60,7 @@ public class Main {
 
 		ParserInputData.BATCH_SIZE = config.batchSize;
 		ParserInputData.ReadInputData();
-		Metric.WriteLog();
+		//Metric.WriteLog();
 		for (int i = 0; i < ParserInputData.BATCH_NUM; i++) {
 			listIn.add(GetNDListIn(i));
 		}

@@ -1,77 +1,189 @@
 thread name: main
-sampleCnts: 1200  total threadNum: 4  batchSize: 1
-qps: 213.4471718249733
-latency: 4.685
-cpu usage ratio: 1.0
-memory usage info:
-init = 2147483648(2097152K) used = 485477912(474099K) committed = 2595749888(2534912K) max = 28631367680(27960320K)
-thread name: main
-sampleCnts: 1200  total threadNum: 4  batchSize: 1
-qps: 213.2954141485958
-latency: 4.6883333333333335
-cpu usage ratio: 1.0
-memory usage info:
-init = 2147483648(2097152K) used = 482525944(471216K) committed = 2595749888(2534912K) max = 28631367680(27960320K)
-thread name: main
-sampleCnts: 1200  total threadNum: 1  batchSize: 1
-qps: 106.61928031985784
-latency: 9.379166666666666
-cpu usage ratio: 1.0
-memory usage info:
-init = 2147483648(2097152K) used = 466890384(455947K) committed = 2595749888(2534912K) max = 28631367680(27960320K)
-thread name: main
-sampleCnts: 1200  total threadNum: 1  batchSize: 1
-qps: 128.2051282051282
-latency: 7.8
-cpu usage ratio: 1.0
-memory usage info:
-init = 2147483648(2097152K) used = 474952632(463820K) committed = 2595749888(2534912K) max = 28631367680(27960320K)
-thread name: main
-sampleCnts: 1200  total threadNum: 1  batchSize: 1
-qps: 128.54847348687736
-latency: 7.779166666666667
+sampleCnts: 12000  total threadNum: 1  batchSize: 1
+qps: 160.56518946692358
+latency: 6.228
 cpu usage ratio: 1.0
 memory usage info:
 null
 thread name: main
-sampleCnts: 1200  total threadNum: 1  batchSize: 1
-qps: 142.41633040588655
-latency: 7.0216666666666665
+sampleCnts: 12000  total threadNum: 1  batchSize: 2
+qps: 286.8480183582732
+latency: 3.4861666666666666
 cpu usage ratio: 1.0
 memory usage info:
 null
 thread name: main
-sampleCnts: 1200  total threadNum: 1  batchSize: 1
-qps: 126.26262626262626
-latency: 7.92
+sampleCnts: 12000  total threadNum: 1  batchSize: 4
+qps: 642.3295150412162
+latency: 1.5568333333333333
+cpu usage ratio: 1.0
+memory usage info:
+null
+thread name: main
+sampleCnts: 12000  total threadNum: 1  batchSize: 8
+qps: 1103.7527593818984
+latency: 0.906
+cpu usage ratio: 1.0
+memory usage info:
+null
+thread name: main
+sampleCnts: 12000  total threadNum: 1  batchSize: 16
+qps: 1780.4154302670622
+latency: 0.5616666666666666
+cpu usage ratio: 1.0
+memory usage info:
+null
+thread name: main
+sampleCnts: 12000  total threadNum: 1  batchSize: 24
+qps: 2160.6049693914297
+latency: 0.4628333333333333
+cpu usage ratio: 1.0
+memory usage info:
+null
+thread name: main
+sampleCnts: 12000  total threadNum: 1  batchSize: 32
+qps: 2680.9651474530833
+latency: 0.373
+cpu usage ratio: 1.0
+memory usage info:
+null
+thread name: main
+sampleCnts: 11968  total threadNum: 1  batchSize: 64
+qps: 3287.912087912088
+latency: 0.30414438502673796
+cpu usage ratio: 1.0
+memory usage info:
+null
+thread name: main
+sampleCnts: 11904  total threadNum: 1  batchSize: 128
+qps: 3378.938404768663
+latency: 0.29595094086021506
+cpu usage ratio: 1.0
+memory usage info:
+null
+thread name: main
+sampleCnts: 11776  total threadNum: 1  batchSize: 512
+qps: 5047.57822546078
+latency: 0.1981148097826087
+cpu usage ratio: 1.0
+memory usage info:
+null
+thread name: main
+sampleCnts: 11264  total threadNum: 1  batchSize: 1024
+qps: 4278.0098746676795
+latency: 0.23375355113636365
 cpu usage ratio: 1.0
 memory usage info:
 null
 thread name: main
 sampleCnts: 12000  total threadNum: 1  batchSize: 1
-qps: 138.57613026156244
-latency: 7.21625
+qps: 156.7336703107245
+latency: 6.38025
 cpu usage ratio: 1.0
 memory usage info:
 null
 thread name: main
-sampleCnts: 12000  total threadNum: 1  batchSize: 1
-qps: 138.87281564633722
-latency: 7.200833333333334
+sampleCnts: 12000  total threadNum: 2  batchSize: 1
+qps: 297.1326697370376
+latency: 3.3655
 cpu usage ratio: 1.0
 memory usage info:
 null
 thread name: main
-sampleCnts: 12000  total threadNum: 1  batchSize: 1
-qps: 142.32849416453175
-latency: 7.026
+sampleCnts: 12000  total threadNum: 4  batchSize: 1
+qps: 519.7955470848133
+latency: 1.9238333333333333
 cpu usage ratio: 1.0
 memory usage info:
 null
 thread name: main
-sampleCnts: 12000  total threadNum: 1  batchSize: 1
-qps: 137.6099446119973
-latency: 7.266916666666667
+sampleCnts: 12000  total threadNum: 8  batchSize: 1
+qps: 685.2444038373686
+latency: 1.4593333333333334
+cpu usage ratio: 1.0
+memory usage info:
+null
+thread name: main
+sampleCnts: 12000  total threadNum: 16  batchSize: 1
+qps: 1031.3708637730983
+latency: 0.9695833333333334
+cpu usage ratio: 1.0
+memory usage info:
+null
+thread name: main
+sampleCnts: 12000  total threadNum: 24  batchSize: 1
+qps: 1045.0230775929635
+latency: 0.9569166666666666
+cpu usage ratio: 1.0
+memory usage info:
+null
+thread name: main
+sampleCnts: 12000  total threadNum: 32  batchSize: 1
+qps: 1437.9868184541642
+latency: 0.6954166666666667
+cpu usage ratio: 1.0
+memory usage info:
+null
+thread name: main
+sampleCnts: 12000  total threadNum: 64  batchSize: 1
+qps: 1049.6850944716584
+latency: 0.9526666666666667
+cpu usage ratio: 1.0
+memory usage info:
+null
+thread name: main
+sampleCnts: 12000  total threadNum: 2  batchSize: 1
+qps: 291.4319020788809
+latency: 3.4313333333333333
+cpu usage ratio: 1.0
+memory usage info:
+null
+thread name: main
+sampleCnts: 12000  total threadNum: 2  batchSize: 2
+qps: 512.4044579187839
+latency: 1.9515833333333332
+cpu usage ratio: 1.0
+memory usage info:
+null
+thread name: main
+sampleCnts: 12000  total threadNum: 4  batchSize: 1
+qps: 524.0174672489082
+latency: 1.9083333333333334
+cpu usage ratio: 1.0
+memory usage info:
+null
+thread name: main
+sampleCnts: 12000  total threadNum: 4  batchSize: 2
+qps: 870.0696055684455
+latency: 1.1493333333333333
+cpu usage ratio: 1.0
+memory usage info:
+null
+thread name: main
+sampleCnts: 12000  total threadNum: 1  batchSize: 24
+qps: 2338.269680436477
+latency: 0.42766666666666664
+cpu usage ratio: 1.0
+memory usage info:
+null
+thread name: main
+sampleCnts: 12000  total threadNum: 1  batchSize: 32
+qps: 2567.3940949935813
+latency: 0.3895
+cpu usage ratio: 1.0
+memory usage info:
+null
+thread name: main
+sampleCnts: 11968  total threadNum: 1  batchSize: 64
+qps: 3009.3034950968067
+latency: 0.332302807486631
+cpu usage ratio: 1.0
+memory usage info:
+null
+thread name: main
+sampleCnts: 11904  total threadNum: 1  batchSize: 128
+qps: 3513.5773317591497
+latency: 0.28461021505376344
 cpu usage ratio: 1.0
 memory usage info:
 null

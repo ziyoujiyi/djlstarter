@@ -97,7 +97,7 @@ public class ParserInputData {
                 if (lineCnt == BATCH_SIZE) {
                     lineCnt = 0;
                     queue.put(batchIdx);
-                    System.out.println("generate batchIdx: " + batchIdx);
+                    //System.out.println("generate batchIdx: " + batchIdx);
                     batchIdx++;
                 }
             }
